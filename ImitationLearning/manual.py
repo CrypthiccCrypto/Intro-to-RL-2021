@@ -5,7 +5,7 @@ You may, however change the value of MAX_STEPS.
 MAX_STEPS = 10000
 
 import gym 
-from pyglet.window import key
+#from pyglet.window import key
 import numpy as np 
 import pickle
 import os 

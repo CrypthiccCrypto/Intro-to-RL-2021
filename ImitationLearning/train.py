@@ -27,11 +27,18 @@ import gzip
 import matplotlib.pyplot as plt
 
 # Load Dependencies #
-...
+import torch
+import torch.nn as nn
+import tensorflow as tf
+import cv2
 #####################
 
-from model import MODEL_NAME # Change this to whatever name you've given your model class
+from model import ILAgent # Change this to whatever name you've given your model class
 from model import preprocessing
+from model import output_preprocessing
+
+DISC_ACTION_SPACE = np.array([[-1., 0. , 0.], [-1., 0., 0.8], [-1., 1., 0.], [0., 0., 0.], [0., 0., 0.8], [0., 1., 0.], [1., 0., 0.], [1., 1., 0.]]) #Discretized action space
+agent = ILAgent((1, 84, 84), len(DISC_ACTION_SPACE))
 
 def load_data(directory = "./data", val_split = 0.1):
     """
@@ -54,14 +61,19 @@ def load_data(directory = "./data", val_split = 0.1):
     X_val, y_val = X[-val_len:], y[-val_len:]
     return X_train, y_train, X_val, y_val
 
+def compute_loss(agent, inputs, outputs):
+  actions = agent.get_action(inputs)
+  loss = torch.mean((actions - outputs)**2)
+  return loss
 
 def train_naive(): # add arguments as needed
-    """
-    Define your training pipeline for naive behavioural cloning. Delete the pass statement once you're done.
-    Save your trained model under "agents/naive".
-    This function should return the history of your training and validation metrics.
-    """
-    pass 
+  batch = preprocessing(X_train)
+  outputs = output_preprocessing(y_train)
+  for i in range(0, num_iterations):
+    loss = compute_loss(agent, batch, outputs)
+    loss.backward()
+    opt.step()
+    opt.zero_grad()
 
 def train_dagger(): # add arguments as needed
     """
@@ -76,17 +88,12 @@ def main():
     X_train, y_train, X_val, y_val = load_data(directory = "./data", val_split = 0.1) # Feel free to experiment with val_split
 
     # Apply preprocessing to observations (if any, delete the next two lines otherwise)
-    X_train = ...
-    X_val = ... 
-
-    # Initialise your model
-    agent = ...
-
+    X_train = preprocessing(X_train)
+    X_val = preprocessing(X_val)
 
     # Training
     if MODE == 'naive':
-        # Call train_naive(), save its results in results/naive.
-        pass
+        train_naive(agent, 100, X_train, y_train)
     else:
         # Call train_dagger, save its results in results/dagger.
         pass

@@ -18,7 +18,9 @@ import numpy as np
 import gym
 import os
 import json
-from model import preprocessing, <MODEL_CLASS> 
+from model import preprocessing, ILAgent
+
+from train import agent
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -28,6 +30,8 @@ args = parser.parse_args()
 RENDER = args.render
 NUM_EPISODES = args.num_episodes
 
+ENV_NAME = 'CarRacing-v0'
+DISC_ACTION_SPACE = np.array([[-1., 0. , 0.], [-1., 0., 0.8], [-1., 1., 0.], [0., 0., 0.], [0., 0., 0.8], [0., 1., 0.], [1., 0., 0.], [1., 1., 0.]]) #Discretized action space
 
 def run_episode(env, agent, rendering=True, max_timesteps=2000):
     
@@ -39,10 +43,11 @@ def run_episode(env, agent, rendering=True, max_timesteps=2000):
     while True:
         
         # preprocess
-        state = ...
+        state = preprocessing(state)
 
         # get action
-        a = ...
+        a_set = agent.get_action(state)
+        a = DISC_ACTION_SPACE[np.argmax(np.array(a_set.detach()).squeeze())]
 
         next_state, r, done, info = env.step(a)   
         episode_reward += r       
@@ -58,11 +63,12 @@ def run_episode(env, agent, rendering=True, max_timesteps=2000):
 
 def main():
     # load agent
-    agent = ... # Initialise model
-    agent_name = "" # Distinguish btw naive and dagger
-    ... # Load model weights
+    agent_eval = ILAgent((1, 84, 84), len(DISC_ACTION_SPACE))
+    #agent_name = "" # Distinguish btw naive and dagger
+    # Load model weights
+    agent_eval.load_state_dict(agent.state_dict())
 
-    env = gym.make('CarRacing-v0').unwrapped
+    env = gym.make(ENV_NAME).unwrapped
 
     episode_rewards = []
     for i in range(NUM_EPISODES):
